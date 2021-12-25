@@ -1,0 +1,35 @@
+SELECT
+
+query_1.event_type,
+query_1.value - query_2.value
+
+FROM
+
+(SELECT event_type, value 
+FROM events
+WHERE event_type IN (
+    SELECT event_type
+    FROM events
+    GROUP BY event_type
+    HAVING COUNT (event_type) > 1
+)
+GROUP BY event_type) as query_1
+
+LEFT JOIN (SELECT event_type, value
+FROM events
+WHERE time NOT IN (
+SELECT MAX(time)
+FROM events
+WHERE event_type IN (
+    SELECT event_type
+    FROM events
+    GROUP BY event_type
+    HAVING COUNT (event_type) > 1
+)
+GROUP BY event_type)
+GROUP BY event_type
+LIMIT 2) as query_2
+
+ON query_1.event_type = query_2.event_type
+
+GROUP BY query_1.event_type;
